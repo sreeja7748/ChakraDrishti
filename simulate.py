@@ -26,7 +26,8 @@ def make_default_emitters(num_bands: int):
     ]
 
 
-def run_simulation(scheduler: Scheduler, num_bands: int, num_steps: int, emitters=None):
+def run_simulation(scheduler: Scheduler, num_bands: int, num_steps: int, emitters=None,
+                    p_detect: float = 1.0, p_false_alarm: float = 0.0, receiver_seed=None):
     """
     Runs one full simulation:
       1. build a fresh environment (new emitters, empty history)
@@ -39,12 +40,16 @@ def run_simulation(scheduler: Scheduler, num_bands: int, num_steps: int, emitter
     `emitters` can be passed in explicitly so different schedulers can be
     compared on the EXACT same emitter behavior (same random rolls) -
     otherwise we build a fresh default set.
+
+    p_detect / p_false_alarm / receiver_seed configure the (optionally
+    imperfect) sensor model - see receiver.py. Defaults keep the sensor
+    perfect, matching every earlier stage's behavior.
     """
     if emitters is None:
         emitters = make_default_emitters(num_bands)
 
     env = RFEnvironment(num_bands, emitters)
-    receiver = Receiver(num_bands)
+    receiver = Receiver(num_bands, p_detect=p_detect, p_false_alarm=p_false_alarm, seed=receiver_seed)
 
     for t in range(num_steps):
         truth_row = env.step(t)
