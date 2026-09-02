@@ -5,7 +5,20 @@ Models the physical receiver. It can only look at ONE band per timestep.
 It has NO access to the full truth grid — only to whatever single cell
 it chooses to look at, each tick. Everything it "knows" comes from its
 own scan_log, built up one entry at a time as it goes.
+
+The sensor itself is modeled as IMPERFECT (as real hardware is):
+  - p_detect:      given the scanned band IS actually transmitting,
+                    probability the sensor correctly registers a hit
+                    (1 - p_detect = probability of a MISSED DETECTION)
+  - p_false_alarm: given the scanned band is actually SILENT,
+                    probability the sensor incorrectly registers a hit
+                    (a FALSE ALARM)
+Defaults are p_detect=1.0, p_false_alarm=0.0 — a perfect sensor — so
+any existing code that doesn't pass these keeps working exactly as
+before. Pass more realistic values to make Pd/Pfa metrics meaningful.
 """
+
+import random
 
 
 class ScanRecord:
@@ -28,8 +41,11 @@ class ScanRecord:
 
 
 class Receiver:
-    def __init__(self, num_bands: int):
+    def __init__(self, num_bands: int, p_detect: float = 1.0, p_false_alarm: float = 0.0, seed=None):
         self.num_bands = num_bands
+        self.p_detect = p_detect
+        self.p_false_alarm = p_false_alarm
+        self._rng = random.Random(seed)
         self.scan_log: list[ScanRecord] = []  # its entire memory, built over time
 
     def scan(self, t: int, band: int, truth_row: list[int]) -> bool:
@@ -39,9 +55,19 @@ class Receiver:
         0/1 across all bands) - we only ever read ONE element out of it,
         at index `band`. We never look at the rest of the row.
 
-        Returns True (hit) or False (miss), and also logs the result.
+        The RAW truth at that cell is passed through the (possibly
+        imperfect) sensor model before becoming the logged result -
+        `hit` is what the sensor REPORTS, which is what the receiver
+        (and any scheduler) actually gets to know. It is NOT guaranteed
+        to equal the raw truth when p_detect < 1.0 or p_false_alarm > 0.
+
+        Returns the sensor's reported hit/miss, and also logs it.
         """
-        hit = bool(truth_row[band])
+        true_state = bool(truth_row[band])
+        if true_state:
+            hit = self._rng.random() < self.p_detect       # might be a missed detection
+        else:
+            hit = self._rng.random() < self.p_false_alarm  # might be a false alarm
         self.scan_log.append(ScanRecord(t, band, hit))
         return hit
 
