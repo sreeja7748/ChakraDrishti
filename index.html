@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Scan — DRDO IDEX PS 26055</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E12;
+    --panel:#111820;
+    --panel-2:#0D1319;
+    --line:#22303C;
+    --text:#DCE6EE;
+    --muted:#6E8393;
+    --amber:#F2B84A;
+    --green:#4AF2A1;
+    --coral:#E8635C;
+    --blue:#5FA8E8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:var(--bg); color:var(--text); font-family:'Space Grotesk',system-ui,sans-serif;}
+  body{padding:0 0 80px;}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 24px;}
+  code, .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+
+  /* ---------- header ---------- */
+  header{border-bottom:1px solid var(--line); padding:40px 0 32px; position:relative; overflow:hidden;}
+  .header-decor{
+    position:absolute; top:-190px; right:-170px; width:480px; height:480px; border-radius:50%;
+    background:
+      repeating-radial-gradient(circle at center, transparent 0 40px, rgba(150,190,230,0.16) 40px 41px),
+      conic-gradient(from 0deg, transparent 0deg, rgba(130,205,255,0.65) 12deg, rgba(95,168,232,0.20) 42deg, transparent 95deg, transparent 360deg);
+    filter:drop-shadow(0 0 46px rgba(95,168,232,0.40));
+    animation:spin 5s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  header .inner{position:relative; z-index:1;}
+  .ps-tag{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); letter-spacing:0.02em;}
+  h1{font-size:clamp(28px,4vw,40px); font-weight:600; line-height:1.15; margin:10px 0 12px; max-width:20ch;}
+  header p{color:var(--muted); font-size:16px; max-width:62ch; line-height:1.55;}
+
+  .hero-stats{display:flex; align-items:center; gap:28px; margin-top:28px; flex-wrap:wrap;}
+  .hs-val{font-family:'JetBrains Mono',monospace; font-size:38px; font-weight:700; line-height:1; color:var(--green); text-shadow:0 0 18px rgba(74,242,161,0.35);}
+  .hs-val.muted{color:var(--muted); text-shadow:none;}
+  .hs-label{font-size:12px; color:var(--muted); margin-top:7px; line-height:1.4; max-width:20ch;}
+  .hs-div{width:1px; height:46px; background:var(--line);}
+
+  /* ---------- section shell ---------- */
+  section{padding:40px 0; border-bottom:1px solid var(--line);}
+  section:last-of-type{border-bottom:none;}
+  h2{font-size:19px; font-weight:600; margin-bottom:4px;}
+  .section-sub{color:var(--muted); font-size:14.5px; margin-bottom:22px; max-width:64ch; line-height:1.5;}
+
+  /* ---------- pipeline ---------- */
+  .pipeline{display:flex; align-items:stretch; gap:0; overflow-x:auto;}
+  .pnode{flex:1; min-width:150px; background:var(--panel); border:1px solid var(--line); padding:16px 18px; transition:border-color .2s;}
+  .pnode:hover{border-color:#31424F;}
+  .pnode + .pnode{border-left:none;}
+  .pnode .k{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--blue); margin-bottom:6px;}
+  .pnode .t{font-weight:600; font-size:15px; margin-bottom:6px;}
+  .pnode .d{color:var(--muted); font-size:13px; line-height:1.5;}
+  .arrow{display:flex; align-items:center; justify-content:center; width:28px; color:var(--muted); font-size:16px; flex:0 0 auto;}
+
+  /* ---------- hud frame (corner brackets) ---------- */
+  .hud-frame{position:relative;}
+  .hud-frame::before, .hud-frame::after{content:''; position:absolute; width:16px; height:16px; pointer-events:none; opacity:0.8;}
+  .hud-frame::before{top:-1px; left:-1px; border-top:2px solid var(--blue); border-left:2px solid var(--blue);}
+  .hud-frame::after{bottom:-1px; right:-1px; border-bottom:2px solid var(--blue); border-right:2px solid var(--blue);}
+
+  /* ---------- simulator ---------- */
+  .sim-panel{background:var(--panel); border:1px solid var(--line); padding:24px;}
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:20px;}
+  .modebtn{font-family:'JetBrains Mono',monospace; font-size:12.5px; padding:8px 14px; background:var(--panel-2); border:1px solid var(--line); color:var(--muted); cursor:pointer; transition:border-color .15s, color .15s, box-shadow .15s;}
+  .modebtn:hover{color:var(--text); border-color:#31424F;}
+  .modebtn.active{color:var(--green); border-color:var(--green); box-shadow:0 0 12px rgba(74,242,161,0.16);}
+  .spacer{flex:1;}
+  .iconbtn{font-family:'JetBrains Mono',monospace; font-size:12.5px; padding:8px 14px; background:var(--panel-2); border:1px solid var(--line); color:var(--text); cursor:pointer; transition:border-color .15s;}
+  .iconbtn:hover{border-color:var(--blue);}
+
+  .radar-wrap{display:flex; flex-direction:column; align-items:center; margin-bottom:24px;}
+  .radar-glow{position:relative;}
+  .radar-glow::before{content:''; position:absolute; inset:-24px; border-radius:50%; background:radial-gradient(circle at center, rgba(95,168,232,0.09), transparent 68%); pointer-events:none; z-index:0;}
+  .radar-caption{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:10px;}
+  .ring{fill:none; stroke:var(--line); stroke-width:1;}
+  .crosshair{stroke:var(--line); stroke-width:1;}
+  .band-tick-label{font-family:'JetBrains Mono',monospace; font-size:10px; fill:var(--muted);}
+  .sweep-line{stroke:var(--blue); stroke-width:2; filter:drop-shadow(0 0 5px rgba(95,168,232,.7));}
+  .sweep-wedge{fill:var(--blue); opacity:0.10;}
+  .blip{transition:fill .15s, stroke .15s, opacity .15s;}
+  .blip.state-silent{fill:none; stroke:none; opacity:0;}
+  .blip.state-active{fill:var(--amber); stroke:none; opacity:0.55;}
+  .blip.state-miss{fill:none; stroke:var(--blue); stroke-width:1.5; opacity:1;}
+  .blip.state-hit{fill:var(--green); stroke:none; opacity:1; filter:drop-shadow(0 0 7px rgba(74,242,161,.85));}
+
+  .grid-wrap{border:1px solid var(--line); background:var(--panel-2); overflow:hidden;}
+  .band-row{display:flex; align-items:center; border-bottom:1px solid var(--line);}
+  .band-row:last-child{border-bottom:none;}
+  .band-label{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); width:52px; flex:0 0 auto; padding-left:10px;}
+  .cells{display:flex; flex:1;}
+  .cell{width:26px; height:26px; flex:0 0 auto; border-right:1px solid #0A0E12; position:relative; background:#141C24; border-radius:2px; transition:background-color .15s, box-shadow .15s;}
+  .cell.active{background:#3A2E13; box-shadow:inset 0 0 0 1px rgba(242,184,74,0.22);}
+  .cell.scanned{outline:2px solid var(--blue); outline-offset:-2px; z-index:2;}
+  .cell.hit{background:var(--green) !important; box-shadow:0 0 9px rgba(74,242,161,0.55);}
+  .cell.hit.scanned{outline-color:var(--green);}
+
+  .readout{display:flex; gap:0; margin-top:20px; border:1px solid var(--line);}
+  .ro{flex:1; padding:14px 16px; border-right:1px solid var(--line);}
+  .ro:last-child{border-right:none;}
+  .ro .label{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-bottom:6px;}
+  .ro .value{font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:600;}
+  .ro .value.green{color:var(--green); text-shadow:0 0 14px rgba(74,242,161,0.3);}
+
+  .legend{display:flex; gap:20px; margin-top:16px; font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .sw{width:11px; height:11px; display:inline-block; border:1px solid var(--line); border-radius:2px;}
+
+  /* ---------- results ---------- */
+  .bars{border:1px solid var(--line);}
+  .bar-row{display:flex; align-items:center; border-bottom:1px solid var(--line); padding:13px 16px;}
+  .bar-row:last-child{border-bottom:none;}
+  .bar-name{width:150px; flex:0 0 auto; font-size:13.5px;}
+  .bar-track{flex:1; height:20px; background:var(--panel-2); position:relative; margin:0 14px;}
+  .bar-fill{height:100%; background:var(--blue); border-radius:1px; transition:width .5s ease;}
+  .bar-row.highlight .bar-fill{background:var(--green); box-shadow:0 0 10px rgba(74,242,161,0.5);}
+  .bar-val{font-family:'JetBrains Mono',monospace; font-size:13px; width:56px; text-align:right; flex:0 0 auto;}
+  .bar-note{width:150px; flex:0 0 auto; font-size:11.5px; color:var(--muted); text-align:right;}
+
+  /* ---------- insights ---------- */
+  .insights{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line);}
+  .insight{background:var(--panel); padding:18px 20px 18px 19px;}
+  .insight:nth-child(1){border-left:3px solid var(--coral);}
+  .insight:nth-child(2){border-left:3px solid var(--blue);}
+  .insight:nth-child(3){border-left:3px solid var(--green);}
+  .insight:nth-child(4){border-left:3px solid var(--amber);}
+  .insight .n{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--blue); margin-bottom:8px;}
+  .insight p{font-size:13.5px; color:var(--text); line-height:1.55;}
+  .insight p b{color:var(--green); font-weight:600;}
+  @media (max-width:640px){ .insights{grid-template-columns:1fr;} .bar-note{display:none;} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="header-decor"></div>
+    <div class="inner">
+      <div class="ps-tag">DRDO IDEX &middot; PS 26055</div>
+      <h1>Smart Scan Strategy for Electronic Warfare</h1>
+      <p>A closed-loop receiver scheduler that learns which frequency band to check next from its own hits and misses — instead of blindly sweeping the spectrum. This page runs the same simulation environment used to develop and evaluate it.</p>
+      <div class="hero-stats">
+        <div class="hs"><div class="hs-val">60.7%</div><div class="hs-label">interception ratio — trained scheduler</div></div>
+        <div class="hs-div"></div>
+        <div class="hs"><div class="hs-val muted">33.5%</div><div class="hs-label">naive round-robin sweep, current baseline</div></div>
+        <div class="hs-div"></div>
+        <div class="hs"><div class="hs-val muted">30</div><div class="hs-label">held-out scenarios evaluated</div></div>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <h2>How the system fits together</h2>
+    <p class="section-sub">Four independent pieces, each swappable on its own.</p>
+    <div class="pipeline">
+      <div class="pnode">
+        <div class="k">01</div>
+        <div class="t">Environment</div>
+        <div class="d">Simulated emitters — fixed-frequency, frequency-agile, periodic-scan — generate ground truth across all bands.</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+      <div class="pnode">
+        <div class="k">02</div>
+        <div class="t">Receiver</div>
+        <div class="d">Physically limited to one band per tick. Sensor has realistic detection / false-alarm rates.</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+      <div class="pnode">
+        <div class="k">03</div>
+        <div class="t">Scheduler</div>
+        <div class="d">Decides which band to check next, using only its own scan history — never the ground truth.</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+      <div class="pnode">
+        <div class="k">04</div>
+        <div class="t">Metrics</div>
+        <div class="d">Pd, Pfa, interception ratio, avg intercept time — scored after the fact, never seen by the scheduler.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Live spectrum scan</h2>
+    <p class="section-sub">The amber field is the full picture — every emitter, every band, all the time. The scheduler never sees this. It only ever sees the single blue-outlined cell it chooses to check each tick, and whether that cell turns green.</p>
+
+    <div class="sim-panel">
+      <div class="controls">
+        <button class="modebtn active" data-mode="roundrobin">Round-robin sweep</button>
+        <button class="modebtn" data-mode="random">Random</button>
+        <button class="modebtn" data-mode="smart">Trained scheduler</button>
+        <div class="spacer"></div>
+        <button class="iconbtn" id="playBtn">Pause</button>
+        <button class="iconbtn" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="radar-wrap">
+        <svg id="radarSvg" viewBox="0 0 300 300" width="280" height="280"></svg>
+        <div class="radar-caption">receiver bearing — same tick, same data, as the strip below</div>
+      </div>
+
+      <div class="grid-wrap" id="grid"></div>
+
+      <div class="legend">
+        <span><span class="sw" style="background:#141C24;"></span>silent</span>
+        <span><span class="sw" style="background:#3A2E13;"></span>transmitting (hidden from scheduler)</span>
+        <span><span class="sw" style="background:#141C24; outline:2px solid var(--blue); outline-offset:-2px;"></span>band being scanned right now</span>
+        <span><span class="sw" style="background:var(--green);"></span>caught</span>
+      </div>
+
+      <div class="readout">
+        <div class="ro"><div class="label">tick</div><div class="value" id="roTick">0</div></div>
+        <div class="ro"><div class="label">caught</div><div class="value" id="roHits">0</div></div>
+        <div class="ro"><div class="label">total events</div><div class="value" id="roEvents">0</div></div>
+        <div class="ro"><div class="label">interception ratio</div><div class="value green" id="roRatio">0%</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Held-out evaluation results</h2>
+    <p class="section-sub">Every scheduler run on 30 independently-randomized scenarios (60 ticks each, 90% detection / 5% false-alarm sensor), never seen during any training — mean interception ratio shown below.</p>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <section>
+    <h2>What the numbers actually show</h2>
+    <div class="insights">
+      <div class="insight">
+        <div class="n">Resonance, not intelligence</div>
+        <p>Round-robin's 33.5% looks decent, but it's a coincidence: its 8-tick sweep period happens to line up with a periodic emitter's own 8-tick cycle. Change that emitter's timing slightly and the advantage disappears.</p>
+      </div>
+      <div class="insight">
+        <div class="n">Bandits learn averages, not timing</div>
+        <p>Multi-armed bandits (Epsilon-Greedy, UCB) track each band's average hit rate but have no notion of <b>when</b> — so they can't exploit a band that's only hot for 2 out of every 8 ticks. That's a real, structural blind spot, not a tuning issue.</p>
+      </div>
+      <div class="insight">
+        <div class="n">Trained scheduler: 60.7%</div>
+        <p>A Q-learning agent conditioned on time-in-cycle discovered the emitter's exact schedule from hits and misses alone — catching both ticks of its active window instead of one, nearly <b>2x</b> round-robin.</p>
+      </div>
+      <div class="insight">
+        <div class="n">No free lunch</div>
+        <p>That 60.7% took 500 practice episodes offline. A period-discovery scheduler that learns live, in a single encounter with zero prior training, still reaches 41.4% — a real tradeoff between training cost and one-shot adaptability.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ============================================================
+   Minimal re-implementation of the Python environment, for a
+   live, clickable demo. Same emitter logic as emitters.py:
+   fixed-frequency (band 2), frequency-agile (random), and
+   periodic-scan (bands 0,3,5,7 / dwell 2) — matching the setup
+   used throughout the actual evaluation.
+   ============================================================ */
+const NUM_BANDS = 8;
+const VISIBLE_TICKS = 22;
+const CELL_PX = 26;
+
+let t = 0, hits = 0, events = 0, running = true, mode = 'roundrobin';
+let radioBurstRemaining = 0;
+let history = []; // {truthRow, scannedBand, hit}
+
+function stepTruth(){
+  const row = new Array(NUM_BANDS).fill(0);
+  // fixed-frequency emitter: band 2, bursty
+  if (radioBurstRemaining > 0){ radioBurstRemaining--; row[2] = 1; }
+  else if (Math.random() < 0.15){ radioBurstRemaining = 2; row[2] = 1; }
+  // frequency-agile emitter: random band, p=0.25
+  if (Math.random() < 0.25){ row[Math.floor(Math.random()*NUM_BANDS)] = 1; }
+  // periodic-scan emitter: bands [0,3,5,7], dwell 2, period 8
+  const scanBands = [0,3,5,7];
+  const pos = t % 8;
+  const idx = Math.floor(pos/2);
+  row[scanBands[idx]] = 1;
+  return row;
+}
+
+const trainedPattern = {0:0,1:0,2:3,3:3,4:5,5:5,6:7,7:7}; // matches the real learned Q-table
+
+function chooseBand(){
+  if (mode === 'roundrobin') return t % NUM_BANDS;
+  if (mode === 'random') return Math.floor(Math.random()*NUM_BANDS);
+  if (mode === 'smart') return trainedPattern[t % 8];
+}
+
+function tick(){
+  const truthRow = stepTruth();
+  const band = chooseBand();
+  const hit = truthRow[band] === 1;
+  events += truthRow.reduce((a,b)=>a+b,0);
+  if (hit) hits++;
+  const entry = {truthRow, band, hit};
+  history.push(entry);
+  if (history.length > VISIBLE_TICKS) history.shift();
+  t++;
+  render();
+  updateRadar(entry);
+}
+
+/* ============================================================
+   Radar scope — a circular view of the EXACT SAME entry each
+   grid tick produces (see tick() above). 8 bands arranged
+   around the ring at 45 degree intervals; the sweep beam
+   rotates to point at whichever band is being scanned right
+   now; a blip glows green on the ring the instant that's a hit.
+   ============================================================ */
+const RADAR_CENTER = 150;
+function polar(angleDeg, r){
+  const rad = (angleDeg - 90) * Math.PI / 180; // 0deg = 12 o'clock, clockwise
+  return [RADAR_CENTER + r*Math.cos(rad), RADAR_CENTER + r*Math.sin(rad)];
+}
+function bandAngle(b){ return b * (360 / NUM_BANDS); }
+
+function buildRadar(){
+  const svg = document.getElementById('radarSvg');
+  const ns = 'http://www.w3.org/2000/svg';
+
+  [45, 80, 115].forEach(r => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', 150); c.setAttribute('cy', 150); c.setAttribute('r', r);
+    c.setAttribute('class', 'ring');
+    svg.appendChild(c);
+  });
+
+  [[150,22,150,278],[22,150,278,150]].forEach(([x1,y1,x2,y2]) => {
+    const l = document.createElementNS(ns, 'line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    l.setAttribute('class','crosshair');
+    svg.appendChild(l);
+  });
+
+  for (let b = 0; b < NUM_BANDS; b++){
+    const [lx, ly] = polar(bandAngle(b), 128 + 15);
+    const txt = document.createElementNS(ns, 'text');
+    txt.setAttribute('x', lx); txt.setAttribute('y', ly);
+    txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','middle');
+    txt.setAttribute('class','band-tick-label');
+    txt.textContent = 'B' + b;
+    svg.appendChild(txt);
+  }
+
+  const sweepGroup = document.createElementNS(ns, 'g');
+  sweepGroup.setAttribute('id','sweepGroup');
+  sweepGroup.style.transformOrigin = '150px 150px';
+  sweepGroup.style.transition = 'transform 420ms linear';
+
+  const wedgeHalf = 16;
+  const [wx1, wy1] = polar(-wedgeHalf, 128);
+  const [wx2, wy2] = polar(wedgeHalf, 128);
+  const wedge = document.createElementNS(ns, 'path');
+  wedge.setAttribute('d', `M150,150 L${wx1},${wy1} L${wx2},${wy2} Z`);
+  wedge.setAttribute('class','sweep-wedge');
+  sweepGroup.appendChild(wedge);
+
+  const [sx, sy] = polar(0, 128);
+  const sweepLine = document.createElementNS(ns, 'line');
+  sweepLine.setAttribute('x1',150); sweepLine.setAttribute('y1',150);
+  sweepLine.setAttribute('x2',sx); sweepLine.setAttribute('y2',sy);
+  sweepLine.setAttribute('class','sweep-line');
+  sweepGroup.appendChild(sweepLine);
+
+  svg.appendChild(sweepGroup);
+
+  for (let b = 0; b < NUM_BANDS; b++){
+    const [bx, by] = polar(bandAngle(b), 95);
+    const blip = document.createElementNS(ns, 'circle');
+    blip.setAttribute('id', 'blip' + b);
+    blip.setAttribute('cx', bx); blip.setAttribute('cy', by); blip.setAttribute('r', 5);
+    blip.setAttribute('class', 'blip state-silent');
+    svg.appendChild(blip);
+  }
+}
+
+function updateRadar(entry){
+  const sweepGroup = document.getElementById('sweepGroup');
+  sweepGroup.style.transform = `rotate(${bandAngle(entry.band)}deg)`;
+
+  for (let b = 0; b < NUM_BANDS; b++){
+    const blip = document.getElementById('blip' + b);
+    const isScanned = entry.band === b;
+    const isActive = entry.truthRow[b] === 1;
+    let state = 'silent';
+    if (isScanned && isActive) state = 'hit';
+    else if (isScanned) state = 'miss';
+    else if (isActive) state = 'active';
+    blip.setAttribute('class', 'blip state-' + state);
+    blip.setAttribute('r', state === 'hit' ? 6 : 5);
+  }
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let b = 0; b < NUM_BANDS; b++){
+    const row = document.createElement('div');
+    row.className = 'band-row';
+    const label = document.createElement('div');
+    label.className = 'band-label mono';
+    label.textContent = 'B' + b;
+    row.appendChild(label);
+    const cells = document.createElement('div');
+    cells.className = 'cells';
+    history.forEach(entry => {
+      const cell = document.createElement('div');
+      let cls = 'cell';
+      if (entry.truthRow[b]) cls += ' active';
+      if (entry.band === b) cls += ' scanned';
+      if (entry.band === b && entry.hit) cls += ' hit';
+      cell.className = cls;
+      cells.appendChild(cell);
+    });
+    row.appendChild(cells);
+    grid.appendChild(row);
+  }
+  document.getElementById('roTick').textContent = t;
+  document.getElementById('roHits').textContent = hits;
+  document.getElementById('roEvents').textContent = events;
+  document.getElementById('roRatio').textContent = events > 0 ? Math.round(100*hits/events) + '%' : '0%';
+}
+
+function loop(){
+  if (running) tick();
+  setTimeout(loop, 450);
+}
+
+document.querySelectorAll('.modebtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.modebtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    resetSim();
+  });
+});
+document.getElementById('playBtn').addEventListener('click', (e) => {
+  running = !running;
+  e.target.textContent = running ? 'Pause' : 'Play';
+});
+document.getElementById('resetBtn').addEventListener('click', resetSim);
+
+function resetSim(){
+  t = 0; hits = 0; events = 0; radioBurstRemaining = 0; history = [];
+  render();
+  for (let b = 0; b < NUM_BANDS; b++){
+    const blip = document.getElementById('blip' + b);
+    if (blip) blip.setAttribute('class', 'blip state-silent');
+  }
+}
+
+buildRadar();
+resetSim();
+loop();
+
+/* ============================================================
+   Results bar chart — real numbers from the 30-seed held-out
+   evaluation (demo_stage7.py output).
+   ============================================================ */
+const results = [
+  {name:'Round-robin', value:33.5, note:'open loop'},
+  {name:'Random', value:10.2, note:'open loop'},
+  {name:'Epsilon-Greedy', value:13.3, note:'bandit'},
+  {name:'UCB', value:11.0, note:'bandit'},
+  {name:'Periodic-lock', value:41.4, note:'online, no training'},
+  {name:'Q-learning', value:60.7, note:'trained offline', hl:true},
+];
+const maxVal = Math.max(...results.map(r=>r.value));
+const barsEl = document.getElementById('bars');
+results.forEach(r => {
+  const row = document.createElement('div');
+  row.className = 'bar-row' + (r.hl ? ' highlight' : '');
+  row.innerHTML = `
+    <div class="bar-name">${r.name}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${(r.value/maxVal*100).toFixed(1)}%"></div></div>
+    <div class="bar-val mono">${r.value.toFixed(1)}%</div>
+    <div class="bar-note mono">${r.note}</div>
+  `;
+  barsEl.appendChild(row);
+});
+</script>
+
+</body>
+</html>
