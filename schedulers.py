@@ -147,3 +147,57 @@ class UCBScheduler(Scheduler):
         best_score = max(scores.values())
         best_bands = [b for b, s in scores.items() if s == best_score]
         return self._rng.choice(best_bands)
+
+
+class QLearningScheduler(Scheduler):
+    """
+    A tabular Q-learning scheduler. Unlike the bandits above, its state
+    includes TIME (t % period), not just per-band averages - so it CAN
+    in principle learn "band 0 is hot specifically at phase 0 of the
+    cycle", which is exactly what beat the bandits in Stage 5.
+
+    Two distinct usage modes, controlled by `epsilon`:
+      - TRAINING: epsilon > 0 (e.g. 0.1) so it still explores while its
+        Q-table is updated after every scan via .update().
+      - EVALUATION/DEPLOYMENT: epsilon = 0 (or very small) so it always
+        exploits the Q-table it already learned, no more updates.
+
+    `period` defaults to num_bands - a reasonable starting assumption
+    when we don't know a periodic emitter's true cycle length (in
+    Stage 7 we'll handle discovering the ACTUAL period properly; this
+    is a simpler, more general stand-in).
+    """
+
+    def __init__(self, num_bands: int, period: int = None, epsilon: float = 0.0, seed=None):
+        super().__init__(num_bands)
+        self.period = period or num_bands
+        self.epsilon = epsilon
+        self._rng = random.Random(seed)
+        self.q_table: dict[int, list[float]] = {}
+
+    def _q_values(self, state: int) -> list[float]:
+        if state not in self.q_table:
+            self.q_table[state] = [0.0] * self.num_bands
+        return self.q_table[state]
+
+    def choose_band(self, t: int, receiver: Receiver) -> int:
+        state = t % self.period
+        if self._rng.random() < self.epsilon:
+            return self._rng.randrange(self.num_bands)  # explore (training only)
+        q = self._q_values(state)
+        best_q = max(q)
+        best_actions = [a for a, v in enumerate(q) if v == best_q]
+        return self._rng.choice(best_actions)  # exploit learned Q-table
+
+    def update(self, state: int, action: int, reward: float, next_state: int,
+               alpha: float = 0.1, gamma: float = 0.5):
+        """
+        The Q-learning update rule. Only called during TRAINING (see
+        train_qlearning.py) - never during a normal evaluation run,
+        since real deployment shouldn't keep rewriting the policy
+        mid-mission based on a single scan.
+        """
+        q = self._q_values(state)
+        next_q = self._q_values(next_state)
+        td_target = reward + gamma * max(next_q)
+        q[action] += alpha * (td_target - q[action])
