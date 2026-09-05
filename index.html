@@ -80,12 +80,6 @@
   .iconbtn{font-family:'JetBrains Mono',monospace; font-size:12.5px; padding:8px 14px; background:var(--panel-2); border:1px solid var(--line); color:var(--text); cursor:pointer; transition:border-color .15s;}
   .iconbtn:hover{border-color:var(--blue);}
 
-  .paramrow{display:flex; flex-wrap:wrap; gap:22px; align-items:flex-end; margin:-4px 0 20px; padding:14px 16px; background:var(--panel-2); border:1px solid var(--line);}
-  .paramlabel{display:flex; flex-direction:column; gap:6px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);}
-  .paramlabel span{color:var(--text);}
-  .paramlabel input[type=range]{accent-color:var(--blue); width:130px; cursor:pointer;}
-  .param-note{width:100%; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:2px;}
-
   .radar-wrap{display:flex; flex-direction:column; align-items:center; margin-bottom:24px;}
   .radar-glow{position:relative;}
   .radar-glow::before{content:''; position:absolute; inset:-24px; border-radius:50%; background:radial-gradient(circle at center, rgba(95,168,232,0.09), transparent 68%); pointer-events:none; z-index:0;}
@@ -106,7 +100,7 @@
   .band-row:last-child{border-bottom:none;}
   .band-label{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); width:52px; flex:0 0 auto; padding-left:10px;}
   .cells{display:flex; flex:1;}
-  .cell{flex:1 1 0; min-width:8px; height:26px; border-right:1px solid #0A0E12; position:relative; background:#141C24; border-radius:2px; transition:background-color .15s, box-shadow .15s;}
+  .cell{width:26px; height:26px; flex:0 0 auto; border-right:1px solid #0A0E12; position:relative; background:#141C24; border-radius:2px; transition:background-color .15s, box-shadow .15s;}
   .cell.active{background:#3A2E13; box-shadow:inset 0 0 0 1px rgba(242,184,74,0.22);}
   .cell.scanned{outline:2px solid var(--blue); outline-offset:-2px; z-index:2;}
   .cell.hit{background:var(--green) !important; box-shadow:0 0 9px rgba(74,242,161,0.55);}
@@ -210,22 +204,6 @@
         <button class="iconbtn" id="resetBtn">Reset</button>
       </div>
 
-      <div class="paramrow">
-        <label class="paramlabel">bands: <span id="bandsVal">8</span>
-          <input type="range" id="bandsSlider" min="4" max="12" step="1" value="8">
-        </label>
-        <label class="paramlabel">periodic dwell: <span id="dwellVal">2</span>
-          <input type="range" id="dwellSlider" min="1" max="4" step="1" value="2">
-        </label>
-        <label class="paramlabel">agile emitter tx rate: <span id="agileVal">25%</span>
-          <input type="range" id="agileSlider" min="0" max="50" step="5" value="25">
-        </label>
-        <label class="paramlabel">tick speed: <span id="speedVal">450ms</span>
-          <input type="range" id="speedSlider" min="150" max="900" step="50" value="450">
-        </label>
-        <div class="param-note">These reconfigure the live demo only, for exploration — the evaluation results below were computed with the fixed spec (8 bands, dwell 2) used in the actual submission. A fixed configuration always repeats the same periodic pattern by design — that's what "periodic" means — so change bands/dwell above to see a genuinely different one.</div>
-      </div>
-
       <div class="radar-wrap">
         <svg id="radarSvg" viewBox="0 0 300 300" width="280" height="280"></svg>
         <div class="radar-caption">receiver bearing — same tick, same data, as the strip below</div>
@@ -282,73 +260,39 @@
 /* ============================================================
    Minimal re-implementation of the Python environment, for a
    live, clickable demo. Same emitter logic as emitters.py:
-   fixed-frequency, frequency-agile (random), and periodic-scan
-   (dwell N) — all now reconfigurable live via the sliders above.
+   fixed-frequency (band 2), frequency-agile (random), and
+   periodic-scan (bands 0,3,5,7 / dwell 2) — matching the setup
+   used throughout the actual evaluation.
    ============================================================ */
-let NUM_BANDS = 8;
-let DWELL = 2;
-let AGILE_P = 0.25;
-let TICK_MS = 450;
+const NUM_BANDS = 8;
 const VISIBLE_TICKS = 22;
+const CELL_PX = 26;
 
 let t = 0, hits = 0, events = 0, running = true, mode = 'roundrobin';
 let radioBurstRemaining = 0;
 let history = []; // {truthRow, scannedBand, hit}
 
-function computePeriodicBands(numBands){
-  // Preserve the exact real config at the default (8 bands) so this
-  // stays consistent with the actual Python evaluation everywhere
-  // else on this page. Any other band count gets a sensible,
-  // evenly-spaced schedule instead.
-  if (numBands === 8) return [0, 3, 5, 7];
-  const count = Math.max(2, Math.round(numBands / 2));
-  const spacing = Math.max(1, Math.floor(numBands / count));
-  const bands = [];
-  for (let i = 0; i < count; i++) bands.push((i * spacing) % numBands);
-  return [...new Set(bands)];
-}
-function computeFixedBand(numBands){
-  return numBands === 8 ? 2 : Math.min(numBands - 1, Math.max(0, Math.round(numBands / 4)));
-}
-
-let PERIODIC_BANDS = computePeriodicBands(NUM_BANDS);
-let FIXED_BAND = computeFixedBand(NUM_BANDS);
-let trainedPattern = {};
-
-function cycleLen(){ return PERIODIC_BANDS.length * DWELL; }
-
-function periodicBandAt(tick){
-  const pos = tick % cycleLen();
-  const idx = Math.floor(pos / DWELL);
-  return PERIODIC_BANDS[idx];
-}
-
-function rebuildTrainedPattern(){
-  // The "trained scheduler" mode always plays the ideal policy for
-  // whatever periodic schedule is currently configured - same idea
-  // as the real learned Q-table, just recomputed live instead of
-  // trained offline, so the demo stays fair as you retune bands/dwell.
-  trainedPattern = {};
-  const cl = cycleLen();
-  for (let phase = 0; phase < cl; phase++) trainedPattern[phase] = periodicBandAt(phase);
-}
-
 function stepTruth(){
   const row = new Array(NUM_BANDS).fill(0);
-  // fixed-frequency emitter: bursty, lives on one band
-  if (radioBurstRemaining > 0){ radioBurstRemaining--; row[FIXED_BAND] = 1; }
-  else if (Math.random() < 0.15){ radioBurstRemaining = 2; row[FIXED_BAND] = 1; }
-  // frequency-agile emitter: random band, configurable tx rate
-  if (Math.random() < AGILE_P){ row[Math.floor(Math.random()*NUM_BANDS)] = 1; }
-  // periodic-scan emitter: configurable bands/dwell
-  row[periodicBandAt(t)] = 1;
+  // fixed-frequency emitter: band 2, bursty
+  if (radioBurstRemaining > 0){ radioBurstRemaining--; row[2] = 1; }
+  else if (Math.random() < 0.15){ radioBurstRemaining = 2; row[2] = 1; }
+  // frequency-agile emitter: random band, p=0.25
+  if (Math.random() < 0.25){ row[Math.floor(Math.random()*NUM_BANDS)] = 1; }
+  // periodic-scan emitter: bands [0,3,5,7], dwell 2, period 8
+  const scanBands = [0,3,5,7];
+  const pos = t % 8;
+  const idx = Math.floor(pos/2);
+  row[scanBands[idx]] = 1;
   return row;
 }
+
+const trainedPattern = {0:0,1:0,2:3,3:3,4:5,5:5,6:7,7:7}; // matches the real learned Q-table
 
 function chooseBand(){
   if (mode === 'roundrobin') return t % NUM_BANDS;
   if (mode === 'random') return Math.floor(Math.random()*NUM_BANDS);
-  if (mode === 'smart') return trainedPattern[t % cycleLen()];
+  if (mode === 'smart') return trainedPattern[t % 8];
 }
 
 function tick(){
@@ -381,7 +325,6 @@ function bandAngle(b){ return b * (360 / NUM_BANDS); }
 
 function buildRadar(){
   const svg = document.getElementById('radarSvg');
-  svg.innerHTML = ''; // clear so this can be safely re-run when NUM_BANDS changes
   const ns = 'http://www.w3.org/2000/svg';
 
   [45, 80, 115].forEach(r => {
@@ -489,7 +432,7 @@ function render(){
 
 function loop(){
   if (running) tick();
-  setTimeout(loop, TICK_MS);
+  setTimeout(loop, 450);
 }
 
 document.querySelectorAll('.modebtn').forEach(btn => {
@@ -515,39 +458,6 @@ function resetSim(){
   }
 }
 
-function fullReconfigure(){
-  // Called whenever NUM_BANDS or DWELL changes - both the emitter
-  // schedule and the radar's band layout depend on these, so both
-  // need a full rebuild, not just a stat reset.
-  PERIODIC_BANDS = computePeriodicBands(NUM_BANDS);
-  FIXED_BAND = computeFixedBand(NUM_BANDS);
-  rebuildTrainedPattern();
-  buildRadar();
-  resetSim();
-}
-
-document.getElementById('bandsSlider').addEventListener('input', (e) => {
-  NUM_BANDS = parseInt(e.target.value, 10);
-  document.getElementById('bandsVal').textContent = NUM_BANDS;
-  fullReconfigure();
-});
-document.getElementById('dwellSlider').addEventListener('input', (e) => {
-  DWELL = parseInt(e.target.value, 10);
-  document.getElementById('dwellVal').textContent = DWELL;
-  fullReconfigure();
-});
-document.getElementById('agileSlider').addEventListener('input', (e) => {
-  AGILE_P = parseInt(e.target.value, 10) / 100;
-  document.getElementById('agileVal').textContent = e.target.value + '%';
-  resetSim(); // only affects emitter randomness, no structural rebuild needed
-});
-document.getElementById('speedSlider').addEventListener('input', (e) => {
-  TICK_MS = parseInt(e.target.value, 10);
-  document.getElementById('speedVal').textContent = TICK_MS + 'ms';
-  // loop() reads TICK_MS fresh every iteration - no rebuild needed
-});
-
-rebuildTrainedPattern();
 buildRadar();
 resetSim();
 loop();
