@@ -152,56 +152,179 @@ class UCBScheduler(Scheduler):
 
 class QLearningScheduler(Scheduler):
     """
-    A tabular Q-learning scheduler. Unlike the bandits above, its state
-    includes TIME (t % period), not just per-band averages - so it CAN
-    in principle learn "band 0 is hot specifically at phase 0 of the
-    cycle", which is exactly what beat the bandits in Stage 5.
+    Observation-aware tabular Q-learning scheduler.
 
-    Two distinct usage modes, controlled by `epsilon`:
-      - TRAINING: epsilon > 0 (e.g. 0.1) so it still explores while its
-        Q-table is updated after every scan via .update().
-      - EVALUATION/DEPLOYMENT: epsilon = 0 (or very small) so it always
-        exploits the Q-table it already learned, no more updates.
+    The scheduler does NOT see the RF truth grid.
 
-    `period` defaults to num_bands - a reasonable starting assumption
-    when we don't know a periodic emitter's true cycle length (in
-    Stage 7 we'll handle discovering the ACTUAL period properly; this
-    is a simpler, more general stand-in).
+    Its state is built only from information that the receiver has
+    actually observed:
+
+        1. Current time phase
+        2. Most recently detected band
+        3. How many ticks ago that detection happened
+
+    Example state:
+
+        (3, 5, 2)
+
+    means:
+
+        phase = 3
+        most recent observed HIT was on band 5
+        that HIT happened 2 ticks ago
+
+    This allows Q-learning to use receiver observations instead of
+    relying only on time phase.
     """
 
-    def __init__(self, num_bands: int, period: int = None, epsilon: float = 0.0, seed=None):
+    def __init__(
+        self,
+        num_bands: int,
+        period: int = None,
+        epsilon: float = 0.0,
+        seed=None,
+        max_hit_age: int = 8
+    ):
         super().__init__(num_bands)
+
         self.period = period or num_bands
         self.epsilon = epsilon
-        self._rng = random.Random(seed)
-        self.q_table: dict[int, list[float]] = {}
+        self.max_hit_age = max_hit_age
 
-    def _q_values(self, state: int) -> list[float]:
+        self._rng = random.Random(seed)
+
+        # State -> Q-values for every possible band/action
+        #
+        # Example:
+        # {
+        #     (3, 5, 2): [0.1, 0.2, 0.0, 0.8, ...]
+        # }
+        self.q_table: dict[tuple, list[float]] = {}
+
+    def _get_observation_state(self, t: int, receiver: Receiver) -> tuple:
+        """
+        Build the current RL state using ONLY receiver observations.
+
+        The scheduler is never allowed to inspect the environment's
+        truth grid.
+        """
+
+        # ---------------------------------------------------------
+        # 1. Current phase
+        # ---------------------------------------------------------
+        phase = t % self.period
+
+        # ---------------------------------------------------------
+        # 2. Find the most recent HIT reported by the receiver
+        # ---------------------------------------------------------
+        last_hit_band = self.num_bands   # sentinel = no hit yet
+        last_hit_t = None
+
+        for record in reversed(receiver.scan_log):
+            if record.hit:
+                last_hit_band = record.band
+                last_hit_t = record.t
+                break
+
+        # ---------------------------------------------------------
+        # 3. Calculate how long ago the last HIT happened
+        # ---------------------------------------------------------
+        if last_hit_t is None:
+            hit_age = self.max_hit_age
+        else:
+            hit_age = t - last_hit_t
+            hit_age = min(hit_age, self.max_hit_age)
+
+        # ---------------------------------------------------------
+        # Final observation-aware state
+        # ---------------------------------------------------------
+        return (
+            phase,
+            last_hit_band,
+            hit_age
+        )
+
+    def _q_values(self, state: tuple) -> list[float]:
+        """
+        Return the Q-values for a state.
+
+        If this state has never been seen before, initialise all
+        actions to zero.
+        """
+
         if state not in self.q_table:
             self.q_table[state] = [0.0] * self.num_bands
+
         return self.q_table[state]
 
     def choose_band(self, t: int, receiver: Receiver) -> int:
-        state = t % self.period
-        if self._rng.random() < self.epsilon:
-            return self._rng.randrange(self.num_bands)  # explore (training only)
-        q = self._q_values(state)
-        best_q = max(q)
-        best_actions = [a for a, v in enumerate(q) if v == best_q]
-        return self._rng.choice(best_actions)  # exploit learned Q-table
+        """
+        Choose the next band using epsilon-greedy action selection.
+        """
 
-    def update(self, state: int, action: int, reward: float, next_state: int,
-               alpha: float = 0.1, gamma: float = 0.5):
+        # IMPORTANT:
+        # The state comes from receiver observations.
+        state = self._get_observation_state(t, receiver)
+
+        # ---------------------------------------------------------
+        # EXPLORATION
+        # ---------------------------------------------------------
+        if self._rng.random() < self.epsilon:
+            return self._rng.randrange(self.num_bands)
+
+        # ---------------------------------------------------------
+        # EXPLOITATION
+        # ---------------------------------------------------------
+        q = self._q_values(state)
+
+        best_q = max(q)
+
+        # Random tie-breaking prevents an artificial preference
+        # for lower-numbered bands.
+        best_actions = [
+            action
+            for action, value in enumerate(q)
+            if value == best_q
+        ]
+
+        return self._rng.choice(best_actions)
+
+    def update(
+        self,
+        state: tuple,
+        action: int,
+        reward: float,
+        next_state: tuple,
+        alpha: float = 0.1,
+        gamma: float = 0.5
+    ):
         """
-        The Q-learning update rule. Only called during TRAINING (see
-        train_qlearning.py) - never during a normal evaluation run,
-        since real deployment shouldn't keep rewriting the policy
-        mid-mission based on a single scan.
+        Standard Q-learning update.
+
+        Q(s,a) <- Q(s,a) +
+                  alpha * (
+                      reward + gamma * max Q(s',a')
+                      - Q(s,a)
+                  )
         """
+
         q = self._q_values(state)
         next_q = self._q_values(next_state)
+
         td_target = reward + gamma * max(next_q)
-        q[action] += alpha * (td_target - q[action])
+
+        q[action] += alpha * (
+            td_target - q[action]
+        )
+
+    def get_state(self, t: int, receiver: Receiver) -> tuple:
+        """
+        Public helper used by the training code.
+
+        Returns the state constructed from receiver observations.
+        """
+
+        return self._get_observation_state(t, receiver)
 
 
 class PeriodicLockScheduler(Scheduler):
