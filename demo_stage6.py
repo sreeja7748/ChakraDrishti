@@ -60,9 +60,18 @@ evaluate_across_seeds(lambda seed: EpsilonGreedyScheduler(NUM_BANDS, epsilon=0.1
 evaluate_across_seeds(lambda seed: UCBScheduler(NUM_BANDS, c=2.0, seed=seed + 1000), "UCB")
 evaluate_across_seeds(lambda seed: trained_agent, "QLearning")
 
-print("\nLearned Q-table (rounded), one row per phase-of-cycle (t % 8):")
-print("phase | " + "  ".join(f"band{b}" for b in range(NUM_BANDS)))
-for state in range(NUM_BANDS):
-    q = trained_agent.q_table.get(state, [0.0] * NUM_BANDS)
-    row = "  ".join(f"{v:5.2f}" for v in q)
-    print(f"  {state:>3} | {row}")
+print("\nLearned observation-aware Q-table:")
+print("state = (phase, last_hit_band, hit_age)")
+print()
+
+for state, q_values in sorted(trained_agent.q_table.items()):
+    best_band = max(
+        range(NUM_BANDS),
+        key=lambda band: q_values[band]
+    )
+
+    print(
+        f"{state} -> "
+        f"best_band={best_band} "
+        f"Q={q_values[best_band]:.3f}"
+    )
