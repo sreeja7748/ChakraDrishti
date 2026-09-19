@@ -258,3 +258,38 @@ In the current implementation, the state is represented by the phase of the obse
 state = t % period
 ```
 The action corresponds to the selected frequency band.
+
+---
+
+## 🔄 PeriodicLock
+
+ChakraDrishti also contains a PeriodicLock scheduler.
+
+Unlike Q-learning, PeriodicLock attempts to identify recurring temporal patterns from observed hits.
+
+For example:
+
+```text
+Observed hits:
+
+2 ───── 10 ───── 18 ───── 26
+
+Gaps:
+
+8       8        8
+
+Estimated period ≈ 8
+```
+The scheduler can then use the discovered timing pattern to focus scanning around predicted activity.
+
+This provides a different approach to adaptive scheduling:
+```text
+Q-Learning
+"What action gives me better reward?"
+
+PeriodicLock
+"Does the observed activity repeat periodically?"
+```
+
+---
+
