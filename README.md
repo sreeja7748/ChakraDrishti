@@ -328,8 +328,7 @@ Attempts to exploit recurring temporal patterns.
 
 The system evaluates scheduler performance using several metrics.
 
-Probability of Detection — Pd
-
+### Probability of Detection — Pd
 Measures how often actual transmissions are successfully detected.
 
 ```
@@ -339,3 +338,116 @@ Where:
 
 - TP = True Positives
 - FN = False Negatives
+
+### Probability of False Alarm — Pfa
+Measures how often the receiver reports a transmission when none exists.
+
+```
+Pfa = FP / (FP + TN)
+```
+Where:
+
+- FP = False Positives
+- TN = True Negatives
+
+### Interception Ratio
+Measures the fraction of all actual transmission events that were successfully intercepted.
+
+```
+Interception Ratio = True Positive Interceptions / Total Transmission Events
+```
+This differs from Pd because the receiver is only scanning one band at a time.
+
+### Average Interception Rate
+Measures successful interceptions relative to the number of simulation timesteps.
+
+### Average Interception Time
+Measures the average time between successful interceptions.
+
+---
+
+## 🧩 Project Architecture
+
+```text
+                    ┌─────────────────────┐
+                    │      Emitters       │
+                    │                     │
+                    │ Fixed Frequency     │
+                    │ Frequency Agile     │
+                    │ Periodic Scan       │
+                    └──────────┬──────────┘
+                               │
+                               ↓
+                    ┌─────────────────────┐
+                    │  RF Environment     │
+                    │                     │
+                    │ Hidden Truth State  │
+                    └──────────┬──────────┘
+                               │
+                               ↓
+                    ┌─────────────────────┐
+                    │      Receiver       │
+                    │                     │
+                    │ One-band sensing    │
+                    └──────────┬──────────┘
+                               │
+                         HIT / MISS
+                               │
+                               ↓
+                    ┌─────────────────────┐
+                    │     Scheduler       │
+                    │                     │
+                    │ Q-Learning          │
+                    │ PeriodicLock        │
+                    │ UCB                 │
+                    │ Epsilon-Greedy      │
+                    │ Random              │
+                    │ Round Robin         │
+                    └──────────┬──────────┘
+                               │
+                               ↓
+                    ┌─────────────────────┐
+                    │    Performance      │
+                    │     Metrics         │
+                    └─────────────────────┘
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+Electronic_Warfare_Scanner/
+│
+├── demo_stage1.py
+├── demo_stage2.py
+├── demo_stage3.py
+├── demo_stage4.py
+├── demo_stage5.py
+├── demo_stage6.py
+├── demo_stage7.py
+│
+├── emitters.py
+├── environment.py
+├── receiver.py
+├── schedulers.py
+├── simulate.py
+├── train_qlearning.py
+├── metrics.py
+│
+├── inspect_h5.py
+└── index.html
+```
+### File Description
+| File                                | Purpose                                           |
+| ----------------------------------- | ------------------------------------------------- |
+| `emitters.py`                       | Defines simulated RF emitter behaviors            |
+| `environment.py`                    | Creates the RF environment and ground-truth state |
+| `receiver.py`                       | Simulates receiver sensing                        |
+| `schedulers.py`                     | Contains different scheduling strategies          |
+| `train_qlearning.py`                | Trains the Q-learning scheduler                   |
+| `simulate.py`                       | Runs simulation experiments                       |
+| `metrics.py`                        | Calculates performance metrics                    |
+| `demo_stage1.py` – `demo_stage7.py` | Demonstration and evaluation stages               |
+| `index.html`                        | Standalone visualization dashboard                |
+| `inspect_h5.py`                     | Utility script for inspecting H5 files            |
