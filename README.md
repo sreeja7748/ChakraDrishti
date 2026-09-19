@@ -79,3 +79,50 @@ The goal is to learn a scanning policy that achieves more successful interceptio
 - Average Interception Time
 - Prediction accuracy metrics
 - Standalone dashboard for result visualization
+
+---
+
+## 🧠 How ChakraDrishti Works
+
+ChakraDrishti consists of four main components:
+
+```text
+┌───────────────────────┐
+│       Emitters        │
+│                       │
+│ Fixed Frequency       │
+│ Frequency Agile       │
+│ Periodic Scan         │
+└───────────┬───────────┘
+            ↓
+┌───────────────────────┐
+│    RF Environment     │
+│                       │
+│ Creates hidden RF     │
+│ ground-truth state    │
+└───────────┬───────────┘
+            ↓
+┌───────────────────────┐
+│       Receiver        │
+│                       │
+│ Scans ONE band        │
+│ and returns HIT/MISS  │
+└───────────┬───────────┘
+            ↓
+┌───────────────────────┐
+│      Scheduler        │
+│                       │
+│ Q-Learning /          │
+│ Round Robin / UCB /   │
+│ Other strategies      │
+└───────────┬───────────┘
+            ↓
+        Next Scan
+```
+The scheduler does not receive the complete RF ground truth.
+
+It only receives the result of the frequency band that it actually scanned.
+
+---
+
+
