@@ -544,3 +544,36 @@ Security considerations for future deployment include:
 - Removing development artifacts before deployment
 
 Python's *random* module is used for simulation behavior and reproducibility. It is not used for cryptographic security.
+
+---
+
+## ⚠️ Important Scope
+
+ChakraDrishti is currently a simulation and scheduling prototype.
+
+It does not currently perform:
+
+- Real RF signal acquisition
+- Hardware-based SDR reception
+- Waveform classification
+- Automatic emitter identification
+- Real-world spectrum interception
+- RF transmission or jamming
+
+The simulated environment provides controlled ground truth for evaluating the receiver and scheduling algorithms.
+
+---
+
+## 💡 Innovation
+
+The primary focus of ChakraDrishti is not inventing a new reinforcement-learning algorithm.
+
+Instead, the project explores the application of lightweight reinforcement learning to an RF/EW scanning problem where:
+
+- The receiver has limited sensing capacity.
+- Only one frequency band can be scanned at a time.
+- The scheduler must make sequential decisions.
+- Feedback from previous scans can influence future decisions.
+- Temporal patterns can be exploited to improve scanning efficiency.
+
+The project also compares reinforcement learning with several traditional and alternative scheduling strategies.
