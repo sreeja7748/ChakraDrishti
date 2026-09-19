@@ -167,3 +167,34 @@ B0 → B0 → B3 → B3 → B5 → B5 → B7 → B7
        repeats
 ```
 This allows ChakraDrishti to evaluate whether a scheduler can identify and exploit temporal regularities.
+
+---
+
+## 📥 Receiver Model
+
+The receiver has limited sensing capability.
+
+At each timestep, it scans only one frequency band.
+
+The receiver produces:
+```text
+HIT
+```
+when an active transmission is detected, or:
+```text
+MISS
+```
+when no transmission is detected.
+
+Detection is probabilistic and controlled using:
+
+```python
+p_detect
+p_false_alarm
+```
+For example:
+```text
+p_detect = 0.90
+p_false_alarm = 0.05
+```
+means the receiver has a 90% probability of detecting a transmission on a scanned active band and a 5% probability of producing a false alarm on an inactive band.
