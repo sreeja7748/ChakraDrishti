@@ -198,3 +198,63 @@ p_detect = 0.90
 p_false_alarm = 0.05
 ```
 means the receiver has a 90% probability of detecting a transmission on a scanned active band and a 5% probability of producing a false alarm on an inactive band.
+
+---
+
+### 🤖 Q-Learning
+
+ChakraDrishti uses tabular Q-learning as one of its adaptive scheduling strategies.
+
+The learning structure can be represented as:
+
+```text
+             Q-Learning
+                  │
+                  ↓
+        ┌──────────────────┐
+        │      State       │
+        │                  │
+        │ Current phase    │
+        └────────┬─────────┘
+                 ↓
+        ┌──────────────────┐
+        │      Action      │
+        │                  │
+        │ Select RF band   │
+        └────────┬─────────┘
+                 ↓
+        ┌──────────────────┐
+        │    Observation   │
+        │                  │
+        │     HIT/MISS     │
+        └────────┬─────────┘
+                 ↓
+        ┌──────────────────┐
+        │      Reward      │
+        │                  │
+        │ HIT → 1          │
+        │ MISS → 0         │
+        └────────┬─────────┘
+                 ↓
+        Update Q-Table
+```
+The Q-learning update follows:
+```text
+Q(s,a) ← Q(s,a) +
+         α [r + γ max Q(s',a') − Q(s,a)]
+```
+where: 
+| Parameter | Meaning                 |
+| --------- | ----------------------- |
+| `s`       | Current state           |
+| `a`       | Selected frequency band |
+| `r`       | Reward                  |
+| `s'`      | Next state              |
+| `α`       | Learning rate           |
+| `γ`       | Discount factor         |
+
+In the current implementation, the state is represented by the phase of the observation cycle:
+```python
+state = t % period
+```
+The action corresponds to the selected frequency band.
