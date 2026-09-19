@@ -577,3 +577,21 @@ Instead, the project explores the application of lightweight reinforcement learn
 - Temporal patterns can be exploited to improve scanning efficiency.
 
 The project also compares reinforcement learning with several traditional and alternative scheduling strategies.
+
+---
+
+## 🎯 Future Scope
+
+Possible future extensions include:
+
+### Hardware Integration
+
+Integration with Software Defined Radio (SDR) hardware for real RF spectrum observations.
+
+### Real-Time Spectrum Monitoring
+
+Replace simulated emitter states with real receiver measurements.
+
+### Signal Classification
+
+Extend the system from simple signal presence detection to:
