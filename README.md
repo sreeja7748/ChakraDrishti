@@ -324,3 +324,18 @@ Attempts to exploit recurring temporal patterns.
 
 ---
 
+## 📊 Performance Metrics
+
+The system evaluates scheduler performance using several metrics.
+
+Probability of Detection — Pd
+
+Measures how often actual transmissions are successfully detected.
+
+```
+Pd = TP / (TP + FN)
+```
+Where:
+
+- TP = True Positives
+- FN = False Negatives
