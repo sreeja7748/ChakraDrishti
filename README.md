@@ -475,6 +475,17 @@ The trained scheduler switches to exploitation during evaluation.
 
 ---
 
+## 📸 Project SnapShot
+<img width="1899" height="999" alt="Screenshot (592)" src="https://github.com/user-attachments/assets/c296e741-e967-400a-b273-c1157490c039" />
+<img width="1907" height="1019" alt="Screenshot (593)" src="https://github.com/user-attachments/assets/aaed7da2-cb9c-4dce-824d-c94a2d7bd2af" />
+<img width="1890" height="1018" alt="Screenshot (595)" src="https://github.com/user-attachments/assets/865e5ab5-e3a9-4b95-9972-d1e0a4844fe5" />
+<img width="1896" height="1029" alt="Screenshot (596)" src="https://github.com/user-attachments/assets/689adf9e-5938-4d30-b3f8-50ff1e9465a8" />
+<img width="1907" height="1029" alt="Screenshot (597)" src="https://github.com/user-attachments/assets/55df89c2-add2-493a-b006-df857d7e36f1" />
+<img width="1901" height="1004" alt="Screenshot (598)" src="https://github.com/user-attachments/assets/8b819189-e0f3-4efd-8f63-780e7b042ed6" />
+<img width="1900" height="1007" alt="Screenshot (599)" src="https://github.com/user-attachments/assets/a74ac125-5e69-4d51-989d-781f915d683b" />
+
+---
+
 ## 🚀 Running the Project
 ### 1. Clone the repository
 
