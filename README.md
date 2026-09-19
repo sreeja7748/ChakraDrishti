@@ -524,4 +524,23 @@ The Q-learning scheduler is compared against multiple baseline and alternative s
 
 ---
 
+## 🔐 Security Considerations
 
+ChakraDrishti is currently designed as a local simulation prototype rather than a network-exposed production service.
+
+The core simulator primarily uses Python's standard library, minimizing third-party dependency exposure.
+
+Security considerations for future deployment include:
+
+- Pinning external dependencies
+- Auditing dependencies for known vulnerabilities
+- Validating all external inputs
+- Restricting API access
+- Limiting computational resources
+- Keeping hidden ground truth isolated from external interfaces
+- Protecting the learned Q-table
+- Avoiding unnecessary network exposure
+- Running the system locally where possible
+- Removing development artifacts before deployment
+
+Python's *random* module is used for simulation behavior and reproducibility. It is not used for cryptographic security.
