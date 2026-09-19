@@ -42,6 +42,7 @@ At every timestep:
                    │
                    └──────→ Next Decision
 ```
+The goal is to learn a scanning policy that achieves more successful interceptions than a simple fixed scanning strategy.
 
 ---
 
@@ -56,4 +57,25 @@ At every timestep:
 | **Metrics** | `metrics.py` | Pd, Pfa, interception ratio, avg intercept rate/time, computed independently *after* a run — the scheduler never sees this |
 | **Evaluation runner** | `simulate.py`, `demo_stage1.py`–`demo_stage7.py` | Reusable simulation harness + one script per development stage, building up from a naive baseline to the final comparison |
 | **Interactive dashboard** | `index.html` | Self-contained live demo — animated radar scope + spectrum grid, judge-facing, zero build step |
- 
+
+ ---
+
+## ✨ Key Features
+- Adaptive frequency-band selection
+- Tabular Q-learning scheduler
+- Limited-sensing simulation
+- Multiple simulated RF emitter behaviors
+- Periodic transmission pattern detection
+- Round Robin baseline
+- Random scheduler
+- Epsilon-Greedy scheduler
+- UCB scheduler
+- PeriodicLock scheduler
+- Performance benchmarking
+- Probability of Detection (Pd)
+- Probability of False Alarm (Pfa)
+- Interception Ratio
+- Average Interception Rate
+- Average Interception Time
+- Prediction accuracy metrics
+- Standalone dashboard for result visualization
