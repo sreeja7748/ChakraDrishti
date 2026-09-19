@@ -240,8 +240,7 @@ The learning structure can be represented as:
 ```
 The Q-learning update follows:
 ```text
-Q(s,a) ← Q(s,a) +
-         α [r + γ max Q(s',a') − Q(s,a)]
+Q(s,a) ← Q(s,a) + α [r + γ max Q(s',a') − Q(s,a)]
 ```
 where: 
 | Parameter | Meaning                 |
@@ -480,7 +479,7 @@ The trained scheduler switches to exploitation during evaluation.
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone https://github.com/sreeja7748/ChakraDrishti.git
 cd Electronic_Warfare_Scanner
 ```
 ### 2. Run the demonstrations
@@ -506,4 +505,23 @@ index.html
 in a web browser to view the standalone visualization.
 
 ---
+
+## 🧪 Experimental Setup
+
+The evaluation uses multiple independent test scenarios.
+
+The current Stage 7 benchmark uses:
+```
+60 simulation ticks
+8 frequency bands
+30 held-out test scenarios
+90% detection probability
+5% false-alarm probability
+500 Q-learning training episodes
+```
+
+The Q-learning scheduler is compared against multiple baseline and alternative scheduling strategies.
+
+---
+
 
