@@ -293,3 +293,34 @@ PeriodicLock
 
 ---
 
+## 🧪 Scheduling Strategies
+
+ChakraDrishti includes multiple scheduling approaches for comparison.
+
+### Round Robin
+
+Scans frequency bands sequentially:
+```
+0 → 1 → 2 → 3 → 4 → 5 → 6 → 7
+```
+### Random
+Selects frequency bands randomly.
+
+### Epsilon-Greedy
+Balances exploration and exploitation.
+```text
+Explore → Try different bands
+Exploit → Select a high-value band
+```
+
+### UCB
+Uses an Upper Confidence Bound strategy to balance exploration and exploitation.
+
+### Q-Learning
+Learns a frequency-selection policy based on observed rewards.
+
+### PeriodicLock
+Attempts to exploit recurring temporal patterns.
+
+---
+
