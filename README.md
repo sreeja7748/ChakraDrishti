@@ -451,3 +451,59 @@ Electronic_Warfare_Scanner/
 | `demo_stage1.py` – `demo_stage7.py` | Demonstration and evaluation stages               |
 | `index.html`                        | Standalone visualization dashboard                |
 | `inspect_h5.py`                     | Utility script for inspecting H5 files            |
+
+---
+
+## ⚙️ Configuration
+The current benchmark configuration includes:
+
+```python
+NUM_BANDS = 8
+NUM_STEPS = 60
+
+P_DETECT = 0.9
+P_FALSE_ALARM = 0.05
+
+NUM_TEST_SEEDS = 30
+```
+The Q-learning training configuration includes parameters such as:
+```python
+training_epsilon = 0.15
+alpha = 0.1
+gamma = 0.5
+```
+The trained scheduler switches to exploitation during evaluation.
+
+---
+
+## 🚀 Running the Project
+### 1. Clone the repository
+
+```bash
+git clone <YOUR_REPOSITORY_URL>
+cd Electronic_Warfare_Scanner
+```
+### 2. Run the demonstrations
+For example:
+```bash
+python demo_stage6.py
+```
+Individual stages can also be executed:
+```bash
+python demo_stage1.py
+python demo_stage2.py
+python demo_stage3.py
+python demo_stage4.py
+python demo_stage5.py
+python demo_stage6.py
+python demo_stage7.py
+```
+### 3. Open the dashboard
+Open:
+```
+index.html
+```
+in a web browser to view the standalone visualization.
+
+---
+
