@@ -1,4 +1,4 @@
-# ChakraDrishti
+# 📡 ChakraDrishti
 
 ### Adaptive RF/EW Spectrum Scanning using Reinforcement Learning
 
