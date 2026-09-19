@@ -125,4 +125,45 @@ It only receives the result of the frequency band that it actually scanned.
 
 ---
 
+## 📡 RF Emitter Simulation
 
+ChakraDrishti simulates multiple types of emitters.
+
+### 1. Fixed Frequency Emitter
+
+A fixed-frequency emitter operates on a specific frequency band and can transmit in bursts.
+
+```text
+Band: 3
+
+Time →   0 1 2 3 4 5 6 7
+         · · █ █ █ · · ·
+```
+Its transmission behavior is controlled by parameters such as:
+
+- Frequency band
+- Burst-start probability
+- Burst length
+  
+### 2. Frequency Agile Emitter
+
+A frequency-agile emitter can transmit on different frequency bands.
+
+```text
+Time →   0 1 2 3 4 5 6 7
+Band →   2 · 6 1 · 7 3 ·
+```
+This represents an emitter whose operating frequency changes over time.
+
+### 3. Periodic Scan Emitter
+
+The periodic emitter follows a predefined repeating scanning pattern.
+
+For example:
+
+```text
+B0 → B0 → B3 → B3 → B5 → B5 → B7 → B7
+          ↑
+       repeats
+```
+This allows ChakraDrishti to evaluate whether a scheduler can identify and exploit temporal regularities.
