@@ -491,7 +491,7 @@ The trained scheduler switches to exploitation during evaluation.
 
 ```bash
 git clone https://github.com/sreeja7748/ChakraDrishti.git
-cd Electronic_Warfare_Scanner
+cd ChakraDrishti
 ```
 ### 2. Run the demonstrations
 For example:
